@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include ske_customization *.css
+recursive-include ske_customization *.csv
+recursive-include ske_customization *.html
+recursive-include ske_customization *.ico
+recursive-include ske_customization *.js
+recursive-include ske_customization *.json
+recursive-include ske_customization *.md
+recursive-include ske_customization *.png
+recursive-include ske_customization *.py
+recursive-include ske_customization *.svg
+recursive-include ske_customization *.txt
+recursive-exclude ske_customization *.pyc
