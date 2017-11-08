@@ -1,8 +1,5 @@
 @media screen and (min-width: 916px) {
 
-.module-body {
-	padding-left:200px;
-}
 .like-disabled-input {
 	background: #eee;
 	border: 1px solid #d1d8dd;
@@ -207,4 +204,32 @@ a {
 .radio, .checkbox {
 	height: 44px;
 }
+.page-body {
+	width: 100%;
 }
+.list-item__content--id {
+	flex: 2;
+	justify-content: initial;
+}
+.list-item.list-item--head > .list-item__content.hidden-xs.hidden-sm {
+	flex: 2;
+}
+.page-head > .container {
+	width: 100%;
+}
+	.page-title { 
+		width:55%;
+	}
+	.page-actions {
+		width:45%;
+	}
+}
+
+::-webkit-scrollbar {
+    width: 5px;  /* remove scrollbar space */
+    height: 5px;
+}
+::-webkit-scrollbar-thumb {
+    background: #fdd70d;  /* optional: just make scrollbar invisible */
+}
+

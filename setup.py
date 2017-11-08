@@ -7,7 +7,7 @@ version = '0.0.1'
 setup(
     name='ske_customization',
     version=version,
-    description='Customizations Done Specifically for Surya Kiran Electronics',
+    description='Customizations Done Specifically for Mehta Automobiles Pvt Ltd',
     author='Akshay Mehta',
     author_email='mehta.akshay@gmail.com',
     packages=find_packages(),

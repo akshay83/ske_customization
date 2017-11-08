@@ -3,9 +3,9 @@
   "description": null, 
   "docstatus": 0, 
   "doctype": "Custom SQL Queries", 
-  "modified": "2017-04-23 16:25:00.380654", 
+  "modified": "2017-09-28 18:53:31.956900", 
   "name": "Current Stock", 
-  "query": "select item.item_code, item.brand, ifnull((select qty_after_transaction from `tabStock Ledger Entry` det where docstatus=1 and item_code=item.item_code order by posting_date, posting_time desc limit 1),0) as Qty from `tabItem` item order by item.brand, item.item_code", 
+  "query": "select \n  item.item_code, \n  item.brand, \n  sum(actual_qty) as Qty\nfrom \n  `tabItem` item, \n  `tabStock Ledger Entry` det \nwhere \n  item.item_code like '24lh454%' \n  and det.item_code=item.item_code \n  and det.docstatus=1 \n  and det.posting_date&lt;='2017-08-31' \ngroup by \n  item.item_code\norder by \n  item.brand, \n  item.item_code,\n  det.posting_date, \n  det.posting_time", 
   "query_name": "Current Stock"
  }, 
  {
@@ -30,9 +30,9 @@
   "description": null, 
   "docstatus": 0, 
   "doctype": "Custom SQL Queries", 
-  "modified": "2017-07-24 19:52:44.554470", 
+  "modified": "2017-08-19 19:00:55.291683", 
   "name": "Entry Checks", 
-  "query": "select * from (\n  (select sum(paid_amount) as `Payment Entry Sum` from `tabPayment Entry` where docstatus=1) pes,\n  (select sum(debit) as `GL Payment Sum` from `tabGL Entry` where voucher_type = 'Payment Entry') pe,\n  (select sum(grand_total) as `Sales Invoice Sum` from `tabSales Invoice` where docstatus=1) tsi,\n  (select sum(debit) as `GL Sales Sum` from `tabGL Entry` where voucher_type = 'Sales Invoice' and party_type is not null) tsge,\n  (select sum(grand_total) as `Purchase Invoice Sum` from `tabPurchase Invoice` where docstatus=1) tpi,\n  (select sum(credit) as `GL Purchase Sum` from `tabGL Entry` where voucher_type = 'Purchase Invoice' and party_type is not null) tpge \n  )", 
+  "query": "select * from (\n  (select sum(paid_amount) as `Payment Entry Sum` from `tabPayment Entry` where docstatus=1) pes,\n  (select sum(debit) as `GL Payment Sum` from `tabGL Entry` where voucher_type = 'Payment Entry') pe,\n  (select sum(grand_total) as `Sales Invoice Sum` from `tabSales Invoice` where docstatus=1) tsi,\n  (select sum(debit-credit) as `GL Sales Sum` from `tabGL Entry` where voucher_type = 'Sales Invoice' and party_type is not null) tsge,\n  (select sum(grand_total) as `Purchase Invoice Sum` from `tabPurchase Invoice` where docstatus=1) tpi,\n  (select sum(credit) as `GL Purchase Sum` from `tabGL Entry` where voucher_type = 'Purchase Invoice' and party_type is not null) tpge,\n  (select sum(stock_value_difference) as `GL Stock Sum` from `tabStock Ledger Entry` where voucher_type = 'Stock Entry') segl,\n  (select sum(value_difference) as `Stock Entry Sum` from `tabStock Entry` where docstatus=1) sesu,\n  (select sum(total_debit) as `Journal Entry Sum` from `tabJournal Entry` where docstatus=1) jesu,\n  (select sum(debit) as `GL Journal Sum` from `tabGL Entry` where voucher_type='Journal Entry') gljs\n  )", 
   "query_name": "Entry Checks"
  }, 
  {
@@ -52,5 +52,104 @@
   "name": "Negative Entry Check", 
   "query": "select parent, item_code, warehouse from `tabSales Invoice Item` where actual_qty&lt;= 0 and docstatus=1", 
   "query_name": "Negative Entry Check"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-08 14:08:18.193745", 
+  "name": "GFK Sales Report", 
+  "query": "select \n  details.brand,\n  details.item_code, \n  sum(qty) as qty, \n  avg(rate) as rate \nfrom \n  `tabSales Invoice Item` details, \n  `tabSales Invoice` inv \nwhere \n  inv.name=details.parent \n  and inv.docstatus = 1 \n  and inv.posting_date&gt;='2017-07-01' \n  and inv.posting_date&lt;='2017-07-31' \n  and (details.brand='LG' or details.brand='Samsung')\ngroup by item_code \norder by brand, item_code ", 
+  "query_name": "GFK Sales Report"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-15 20:10:36.703268", 
+  "name": "Stock Entry GL Check", 
+  "query": "select asum,name,purpose from (select sum(stock_value_difference) as `asum`, voucher_no from `tabStock Ledger Entry` sle where voucher_type = 'Stock Entry' group by voucher_no) a, `tabStock Entry` b where a.voucher_no = b.name and b.docstatus=1 and a.asum &lt;&gt; b.value_difference", 
+  "query_name": "Stock Entry GL Check"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-20 19:30:44.560955", 
+  "name": "Exchange Details", 
+  "query": "select\n  inv.posting_date,\n  inv.letter_head,\n  inv.name,\n  inv.customer_name,\n  det.exchange_details,\n  group_concat(det.item_code) as `items_bought`\nfrom\n  `tabSales Invoice` inv,\n  `tabSales Invoice Item` det\nwhere\n  det.parent = inv.name\n  and inv.docstatus = 1\n  and det.under_exchange = 1\ngroup by\n  det.parent\norder by \n  inv.letter_head,\n  inv.posting_date", 
+  "query_name": "Exchange Details"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-20 20:10:21.236281", 
+  "name": "SLE vs BIN Stock", 
+  "query": "select * from (\nselect it.brand, it.item_group, it.item_code,\n(select sum(actual_qty) from `tabBin` where item_code=it.item_code) as bin_qty,\n(select sum(actual_qty) from `tabStock Ledger Entry` where item_code=it.item_code) as sle_qty\nfrom `tabItem` it group by it.item_code\n) a where bin_qty&lt;&gt;sle_qty", 
+  "query_name": "SLE vs BIN Stock"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-28 19:21:18.929679", 
+  "name": "Serial No Warehouse Check", 
+  "query": "select \n  a.name,\n  a.warehouse,\n  s.warehouse,\n  s.item_code\nfrom \n  (select \n        sum(\n          ent.actual_qty /\n            (LENGTH(TRIM(TRAILING '\\n' FROM ent.serial_no)) - \n              LENGTH(REPLACE(TRIM(TRAILING '\\n' FROM ent.serial_no), '\\n', '')) + 1)) as qty,\n        ent.warehouse, \n        serial.name, \n        serial.item_code, \n        ent.voucher_no \n      from `tabStock Ledger Entry` ent, \n           `tabSerial No` serial \n      where \n        ent.serial_no like concat('%',serial.name,'%') \n        and ent.item_code=serial.item_code \n      group by \n        serial.name, warehouse) a, \n  `tabSerial No` s \nwhere \n  a.name=s.name \n  and a.qty&gt;=1\n  and a.warehouse&lt;&gt;s.warehouse", 
+  "query_name": "Serial No Warehouse Check"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-29 18:22:54.326433", 
+  "name": "Tax Check", 
+  "query": "(select \n  inv.posting_date, \n  item.parent, \n  item.item_code, \n  inv.reference_details, \n  item.rate, \n  inv.grand_total \n from `tabSales Invoice Item` item, \n      `tabSales Invoice` inv, \n      `tabSales Taxes and Charges` tax \n where inv.name=item.parent \n  and inv.name=tax.parent \n  and tax.included_in_print_rate=1 \n  and item.net_rate=item.rate \n  and item.rate&gt;0 \n  and inv.docstatus=1 \n order by posting_date, parent) \n  union all\n(select \n  inv.posting_date, \n  inv.name, \n  null, \n  inv.reference_details, \n  inv.grand_total,  \n  inv.grand_total \n from `tabSales Invoice` inv \n where inv.docstatus = 1 \n  and inv.total_taxes_and_charges = 0\n  and inv.grand_total&gt;0)", 
+  "query_name": "Tax Check"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-29 18:58:20.223414", 
+  "name": "Sale Report", 
+  "query": "select \n  inv.letter_head,\n  inv.name,\n  inv.posting_date,\n  inv.customer_name,\n  addr.address_line1,\n  addr.address_line2,\n  addr.city,\n  cust.primary_contact_no,\n  item.brand, \n  item.item_group,\n  item.item_code,\n  trim(trailing '\\n' FROM item.serial_no) as serial_no,\n  item.rate\nfrom `tabSales Invoice` inv,\n   `tabSales Invoice Item` item,\n   `tabCustomer` cust,\n   `tabAddress` addr\nwhere\n   inv.name=item.parent\n   and inv.docstatus=1\n   and inv.name=item.parent\n   and item.brand = 'LG'\n   and inv.customer=cust.name\n   and addr.address_title=cust.name \n   and addr.name=inv.customer_address \n   and inv.posting_date&gt;='2017-08-01'     \norder by inv.posting_date, inv.name", 
+  "query_name": "Sale Report"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-08-30 16:26:30.265575", 
+  "name": "Letter Head Check", 
+  "query": "(select 'Payment Entry', name, party_name, letter_head from `tabPayment Entry` where (name like '%RH%' and docstatus=1 and letter_head not like '%Ranjeet%') or (name like '%GB%' and docstatus=1 and letter_head not like '%Geeta%') or (name like '%VN%' and docstatus=1 and letter_head not like '%Vijay N%'))\nunion all\n(select 'Sales Invoice', name, customer_name, letter_head from `tabSales Invoice` where (name like '%RH%' and docstatus=1 and letter_head not like '%Ranjeet%') or (name like '%GB%' and docstatus=1 and letter_head not like '%Geeta%') or (name like '%VN%' and docstatus=1 and letter_head not like '%Vijay N%'))", 
+  "query_name": "Letter Head Check"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-10-07 20:55:24.808632", 
+  "name": "Serial Nos for Price Drop", 
+  "query": "select \n  serial.name,\n  serial.item_code,\n  serial.brand,\n  serial.delivery_date,\n  min(sle.posting_date) as purchase_date,\n  count(*)\nfrom \n  `tabSerial No` serial,\n  `tabStock Ledger Entry` sle\nwhere\n  sle.item_code=serial.item_code\n  and serial.item_code regexp ('49E400|43ES480|49ES480|49ES630|55ES500|49EX600|55EX600')\n  and sle.voucher_no not in (select name from `tabStock Entry` where purpose='Material Transfer')  \n  and serial.name regexp REPLACE(TRIM(TRAILING '\\n' FROM sle.serial_no), '\\n', '|')\n  and (serial.delivery_date is null or serial.delivery_date &gt;= '2017-10-01')\ngroup by\n  serial.name\norder by \n  item_code", 
+  "query_name": "Serial Nos for Price Drop"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-09-12 16:20:06.851293", 
+  "name": "Cash Sales Total", 
+  "query": "select \n  posting_date,\n  sum(grand_total) as `Total`\nfrom\n  `tabSales Invoice`\nwhere\n  docstatus = 1\n  and posting_date&gt;='2017-09-01'\n  and posting_date&lt;='2017-09-12'\n  and customer_name like 'CASH S%'\ngroup by posting_date\norder by posting_date", 
+  "query_name": "Cash Sales Total"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2017-09-18 16:06:30.234163", 
+  "name": "Tax Vs State Query", 
+  "query": "select \n  inv.customer,\n  inv.customer_name,\n  addr.state,\n  addr.gst_state,\n  inv.taxes_and_charges\nfrom\n  `tabSales Invoice` inv,\n  `tabCustomer` cust,\n  `tabAddress` addr \nwhere\n  cust.name=inv.customer\n  and inv.docstatus = 1\n  and inv.posting_date &gt;= '2017-08-01'\n  and inv.posting_date &lt;= '2017-08-31'\n  and addr.address_title=cust.name\norder by\n  inv.posting_date", 
+  "query_name": "Tax Vs State Query"
  }
 ]

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 app_name = "ske_customization"
 app_title = "Customizations for SKE"
 app_publisher = "Akshay Mehta"
-app_description = "Customizations Done Specifically for Mehta Automobiles Pvt Ltd"
+app_description = "Customizations Done Specifically for Surya Kiran Electronics"
 app_icon = "octicon octicon-file-directory"
 app_color = "#589494"
 app_email = "mehta.akshay@gmail.com"
@@ -35,10 +35,12 @@ doc_events = {
 	"Purchase Invoice" : {
 		"on_submit" : "ske_customization.customizations_for_ske.utils.purchase_receipt_on_submit",
 		"validate" : "ske_customization.customizations_for_ske.utils.purchase_receipt_validate",
-		"on_update_after_submit":"ske_customization.customizations_for_ske.purchase_invoice_hooks.purchase_invoice_on_update_after_submit"
+		"on_update_after_submit":"ske_customization.customizations_for_ske.purchase_invoice_hooks.purchase_invoice_on_update_after_submit",
+		"before_submit": "ske_customization.customizations_for_ske.utils.purchase_receipt_before_submit"
 	},
 	"Sales Invoice" : {
 		"validate" : "ske_customization.customizations_for_ske.finance_validation.sales_invoice_validate",
+		"before_submit" : "ske_customization.customizations_for_ske.finance_validation.sales_on_submit_validation",
 		"before_save": "ske_customization.customizations_for_ske.workflow_hooks.before_save_salesinvoice",
 		"on_update_after_submit":"ske_customization.customizations_for_ske.sales_invoice_hooks.sales_invoice_on_update_after_submit"
 	},
@@ -47,15 +49,22 @@ doc_events = {
 	},
         "Stock Entry" : {
                 "validate": "ske_customization.customizations_for_ske.finance_validation.validate_stock_entry_serial_no"
-        }
+        },
+	"Salary Slip" : {
+		"before_save": "ske_customization.customizations_for_ske.salary_slip_hooks.salary_slip_before_save"
+	}
 }
 app_include_css = "/assets/ske_customization/css/custom_css.css"
 app_include_js = ["/assets/ske_customization/js/side_bar.js",
 				"/assets/ske_customization/js/form_comments.js",
 				"/assets/ske_customization/js/core.js",
 				"/assets/ske_customization/js/lz-string.min.js",
-				"/assets/ske_customization/js/quick_customer.js"
+				"/assets/ske_customization/js/quick_customer.js",
+				"/assets/ske_customization/js/monkey_patch_list_view.js"
 				]
+
+doctype_list_js = {"Payment Entry" : "/public/js/payment_entry_list.js",
+			"Sales Invoice" : "/public/js/sales_invoice_list.js"}
 
 jenv_filter = [
     'json_load:ske_customization.customizations_for_ske.jinja.json_load'

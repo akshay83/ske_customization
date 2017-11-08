@@ -40,6 +40,18 @@ def execute(filters=None):
 			"width": 125
 		},
 		{
+			"fieldname":"supplier_type",
+			"label":"Supplier Type",
+			"fieldtype:":"Data",
+			"width": 100
+		},
+		{
+			"fieldname":"supply_type",
+			"label":"Supply Type",
+			"fieldtype:":"Data",
+			"width": 100
+		},
+		{
 			"fieldname":"party_gstin",
 			"label":"Party GSTIN",
 			"fieldtype:":"Data",
@@ -101,8 +113,10 @@ def get_conditions(filters):
 def get_document_specific_columns(filters):
 	if filters.get("document_type"):
 		if filters["document_type"] == "Sales":
-			return """,sales.customer_gstin as gstin, sales.customer_name as party_name, sales.name as inv_no, sales.posting_date as inv_date"""
-	return """,sales.supplier_gstin as gstin,sales.supplier_name as party_name,sales.bill_no as inv_no,sales.bill_date as inv_date"""
+			return """,sales.customer_gstin as gstin, sales.customer_name as party_name, sales.name as inv_no, sales.posting_date as inv_date,
+				(select concat(ifnull(concat(addr.state,','),''),addr.gst_state) from `tabAddress` addr where addr.name=sales.customer_address) as state"""
+	return """,sales.supplier_gstin as gstin,sales.supplier_name as party_name,sales.bill_no as inv_no,sales.bill_date as inv_date,
+		  (select supplier_type from `tabSupplier` where name=sales.supplier) as supplier_type, supply_type"""
 
 
 
@@ -129,6 +143,7 @@ def get_query(filters):
 			  order by sales.name"""
 
 	temp_name = None
+	temp_account_head = None
 	build_row = {}
 
 	query = query.format(**{
@@ -136,6 +151,11 @@ def get_query(filters):
 				"doc_columns": get_document_specific_columns(filters),
 				"condition":get_conditions(filters)
 				})
+
+	#if filters.get("document_type") and filters["document_type"] == "Sales":
+	#	query = get_sales_query().format(**{
+	#				"condition":get_conditions(filters)
+	#				})
 
 	for d in frappe.db.sql(query, as_dict=1):
 		if d.item_wise_tax_detail:
@@ -153,7 +173,10 @@ def get_query(filters):
 				build_row["taxable_amt"] = d.net_total
 				build_row["party_name"] = d.party_name
 				build_row["charge_type"] = d.charge_type
+				build_row["supplier_type"] = d.supplier_type if d.supplier_type else d.state
+				build_row["supply_type"] = d.supply_type if d.supply_type else None
 				temp_name = d.name
+				temp_account_head = d.item_tax_rate
 
 			build_row["total_tax"] = build_row.get("total_tax",0) + d.tax_amount
 
@@ -161,18 +184,61 @@ def get_query(filters):
 			if isinstance(tax_json, basestring):
 				tax_json = json.loads(tax_json)
 
-			for key, val in tax_json.items():
-				build_key = d.account_head+"-"+str(float(val[0]))+"%"
-				if d.charge_type != 'Actual':
+
+			if d.charge_type != 'Actual':
+				for key, val in tax_json.items():
+					build_key = d.account_head+"-"+str(float(val[0]))+"%"
 					build_row[build_key] = build_row.get(build_key,0) + val[1]
-				else:
-					net_amount = frappe.db.get_value("{doctype} Invoice Item".format(**{
-							"doctype":"Sales" if (filters.get("document_type") and filters["document_type"]=="Sales") else "Purchase",
-							}), {
-							"parent": d.name,
-							"item_code": key
-							}, "net_amount")
-					build_row[build_key] = build_row.get(build_key, 0) + round((net_amount * float(val[0]) / 100),2)
+			else:
+				doc = frappe.get_doc("{doctype} Invoice".format(**{
+						"doctype":"Sales" if (filters.get("document_type") and filters["document_type"]=="Sales") else "Purchase",
+						}), d.name)
+
+				for i in doc.items:
+
+					txs = frappe.get_doc("Item", i.item_code).taxes
+
+					for t in txs:
+						build_key = d.account_head+"-"+str(float(t.tax_rate))+"%"
+						if t.tax_type==d.account_head:
+							build_row[build_key] = build_row.get(build_key, 0) + round((i.net_amount * float(t.tax_rate) / 100),2)
 
 	rows.append(build_row)
 	return rows
+
+
+def get_sales_query():
+	return """
+			select
+                            sales.name,
+                            cust.customer_name,
+                            concat(ifnull(addr.city,''),',',ifnull(addr.state,'')) as place,
+                            concat(ifnull(addr.gst_state,''),',',ifnull(addr.gst_state_number,'')) as gst_state,
+                            item.item_tax_rate,
+                            sales.posting_date,
+                            taxes.item_wise_tax_detail,
+                            taxes.account_head,
+                            (item.net_amount) as taxable_amt,
+                            taxes.charge_type,
+                            (item.amount-item.net_amount) as tax_amount,
+                            sales.customer_gstin as gstin,
+                            sales.customer_name as party_name,
+                            taxes.included_in_print_rate
+                          from
+                            `tabSales Taxes and Charges`  taxes,
+                            `tabSales Invoice` sales,
+                            `tabSales Invoice Item` item,
+                            `tabCustomer` cust,
+                            `tabAddress` addr
+                          where
+                            taxes.parent=sales.name
+                            and item.parent=sales.name
+                            and sales.customer=cust.name 
+                            and addr.address_title = cust.name 
+                            and sales.customer_address=addr.name  
+                            and (taxes.charge_type != 'Actual'
+                                or taxes.account_head in (select distinct tax_type from `tabItem Tax`))
+                            and sales.docstatus = 1
+			    {condition}
+                          order by sales.name, item.item_tax_rate, account_head
+	"""

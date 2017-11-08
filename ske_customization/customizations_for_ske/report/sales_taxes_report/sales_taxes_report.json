@@ -7,12 +7,17 @@
  "doctype": "Report", 
  "idx": 0, 
  "is_standard": "Yes", 
- "modified": "2016-02-24 18:37:30.385317", 
+ "modified": "2017-08-09 20:43:46.820255", 
  "modified_by": "Administrator", 
  "module": "Customizations for SKE", 
  "name": "Sales Taxes Report", 
  "owner": "Administrator", 
  "ref_doctype": "Sales Invoice", 
  "report_name": "Sales Taxes Report", 
- "report_type": "Script Report"
+ "report_type": "Script Report", 
+ "roles": [
+  {
+   "role": "All"
+  }
+ ]
 }

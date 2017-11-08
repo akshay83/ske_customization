@@ -9,21 +9,22 @@ $(document).ready(function() {
                              <i class="octicon octicon-three-bars"></i> \
                          </button>';
 
+    navbar.prepend(collapse_button);
+
     var company_name = '<div style="font-size:18px;\
-				color:white;\
-				position: fixed;\
-				display: inline-block;\
-				margin-top: 10px;\
-				text-transform: uppercase;\
-				font-weight: 600;\
-				margin-left: 10px;\
-				left:0;">'+frappe.get_abbr(frappe.defaults.get_default("Company"))+'</div>';
+                                color:white;\
+                                position: fixed;\
+                                display: inline-block;\
+                                margin-top: 10px;\
+                                text-transform: uppercase;\
+                                font-weight: 600;\
+                                margin-left: 10px;\
+                                left:0;">'+frappe.get_abbr(frappe.defaults.get_default("Company"))+'</div>';
 
     var before_navbar = $('div').find('.navbar.navbar-default.navbar-fixed-top').find('.container');
 
     before_navbar.prepend(company_name);
 
-    navbar.prepend(collapse_button);
     $('#side-bar-menu').hide();
   }
 });

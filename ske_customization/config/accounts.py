@@ -4,22 +4,7 @@ from frappe import _
 def get_data():
 	return [
 		{
-			"label" : _("Banking and Payments"),
-			"items" : [
-				{
-					"type" : "doctype",
-					"name" : "Receipts",
-					"description" : _("Formal Receipts for Payments Received") 
-				},
-				{
-					"type" : "doctype",
-					"name" : "Payments",
-					"description" : _("Tool to Make Payments.")
-				}
-			]
-		},
-		{
-			"label": _("Standard Reports"),
+			"label": _("Customized Reports"),
 			"items": [
 				{
 					"type": "report",
@@ -27,6 +12,13 @@ def get_data():
 					"is_query_report": True,
 					"name": "Finance Outstanding",
 					"description": "Shows Finance Outstanding"
+				},
+				{
+					"type": "report",
+					"doctype": "Sales Invoice",
+					"is_query_report": True,
+					"name": "Reference Outstanding",
+					"description": "Shows Pending Payments for Referred Cases"
 				},
 				{
 					"type":"report",
@@ -41,9 +33,41 @@ def get_data():
 					"is_query_report":True,
 					"name":"Simple Sales Report",
 					"description":"Generates a Report for Sales"
+				},
+				{
+					"type":"report",
+					"doctype": "GL Entry",
+					"is_query_report":True,
+					"name":"Ledger Statement",
+					"description":"Generates a Ledger Statement"
+				},
+				{
+					"type":"report",
+					"doctype": "Payment Entry",
+					"is_query_report":True,
+					"name":"Daily Collection Report",
+					"description":"Generates a Daily Collection Report"
 				}
 
 			]
+		},
+		{
+			"label": _("Banking and Payments"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Finance Payment Tool",
+				},
+				{
+					"type": "doctype",
+					"name": "Adjustments Set Off Tool",
+				},
+				{
+					"type": "doctype",
+					"name": "Salary Payment Tool",
+				}
+			]
 		}
+
 	       ]
 

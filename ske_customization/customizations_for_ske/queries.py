@@ -10,11 +10,13 @@ from frappe.utils import nowdate
 
 def select_customer_supplier_query(doctype, txt, searchfield, start, page_len, filters):
 	if filters.get("party_type")=="Customer":
-		return mapl_customer_query(doctype, txt, searchfield, start, page_len, filters)
+		return ske_customer_query(doctype, txt, searchfield, start, page_len, filters)
 	elif filters.get("party_type")=="Supplier":
 		return supplier_query(doctype, txt, searchfield, start, page_len, filters)
+	elif filters.get("party_type")=="Employee":
+		return employee_query(doctype, txt, searchfield, start, page_len, filters)
 
-def mapl_address_query (doctype, txt, searchfield, start, page_len, filters):
+def ske_address_query (doctype, txt, searchfield, start, page_len, filters):
 	fields = ["addr.name","dyn.link_name","addr.address_line1", "addr.address_line2"]
 
 	fields = ", ".join(fields)
@@ -30,7 +32,8 @@ def mapl_address_query (doctype, txt, searchfield, start, page_len, filters):
 			from `tabAddress` addr, `tabDynamic Link` dyn where dyn.parent=addr.name and 
 			(addr.{key} like %(txt)s
 			or address_line1 like %(txt)s
-			or address_line2 like %(txt)s)
+			or address_line2 like %(txt)s
+			or city like %(txt)s)
 			{condition} {mcond}
 			order by
 			if(locate(%(_txt)s, addr.name), locate(%(_txt)s, addr.name), 99999),
@@ -50,10 +53,9 @@ def mapl_address_query (doctype, txt, searchfield, start, page_len, filters):
 			})
 
 
-			
 
 # searches for customer
-def mapl_customer_query(doctype, txt, searchfield, start, page_len, filters):
+def ske_customer_query(doctype, txt, searchfield, start, page_len, filters):
 	return frappe.db.sql("""select * from 
           (
             (select cust.name, cust.customer_name, cust.primary_contact_no,
@@ -103,6 +105,24 @@ def supplier_query(doctype, txt, searchfield, start, page_len, filters):
 		order by name, supplier_name
 		limit %(start)s, %(page_len)s """.format(**{
 			'field': fields,
+			'key': searchfield,
+			'mcond':get_match_cond(doctype)
+		}), {
+			'txt': "%%%s%%" % txt,
+			'_txt': txt.replace("%", ""),
+			'start': start,
+			'page_len': page_len
+		})
+
+
+def employee_query(doctype, txt, searchfield, start, page_len, filters):
+	return frappe.db.sql("""select name, employee_name from `tabEmployee`
+			where docstatus < 2
+			and ({key} like %(txt)s
+			or employee_name like %(txt)s)
+			{mcond}
+			order by name, employee_name
+			limit %(start)s, %(page_len)s """.format(**{
 			'key': searchfield,
 			'mcond':get_match_cond(doctype)
 		}), {
