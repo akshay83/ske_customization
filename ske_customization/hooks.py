@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 app_name = "ske_customization"
 app_title = "Customizations for SKE"
 app_publisher = "Akshay Mehta"
-app_description = "Customizations Done Specifically for Surya Kiran Electronics"
+app_description = "Customizations Done Specifically for Mehta Automobiles Pvt Ltd"
 app_icon = "octicon octicon-file-directory"
 app_color = "#589494"
 app_email = "mehta.akshay@gmail.com"
@@ -15,6 +15,9 @@ fixtures = ["Custom Field", "Property Setter", "Stock Settings", "Selling Settin
 		 "Print Format", "Letter Head", "Workflow", "Workflow State", "Workflow Action", "Custom SQL Queries"]
 
 doc_events = {
+	"*" : {
+		"autoname" : "ske_customization.customizations_for_ske.naming.set_auto_name"
+	},
 	"Item" : {
 		"validate" : "ske_customization.customizations_for_ske.item_hooks.item_validate"
 	},

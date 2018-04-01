@@ -10,13 +10,13 @@ from frappe.utils import nowdate
 
 def select_customer_supplier_query(doctype, txt, searchfield, start, page_len, filters):
 	if filters.get("party_type")=="Customer":
-		return ske_customer_query(doctype, txt, searchfield, start, page_len, filters)
+		return mapl_customer_query(doctype, txt, searchfield, start, page_len, filters)
 	elif filters.get("party_type")=="Supplier":
 		return supplier_query(doctype, txt, searchfield, start, page_len, filters)
 	elif filters.get("party_type")=="Employee":
 		return employee_query(doctype, txt, searchfield, start, page_len, filters)
 
-def ske_address_query (doctype, txt, searchfield, start, page_len, filters):
+def mapl_address_query (doctype, txt, searchfield, start, page_len, filters):
 	fields = ["addr.name","dyn.link_name","addr.address_line1", "addr.address_line2"]
 
 	fields = ", ".join(fields)
@@ -55,7 +55,7 @@ def ske_address_query (doctype, txt, searchfield, start, page_len, filters):
 
 
 # searches for customer
-def ske_customer_query(doctype, txt, searchfield, start, page_len, filters):
+def mapl_customer_query(doctype, txt, searchfield, start, page_len, filters):
 	return frappe.db.sql("""select * from 
           (
             (select cust.name, cust.customer_name, cust.primary_contact_no,
