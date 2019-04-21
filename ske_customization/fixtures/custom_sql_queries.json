@@ -178,5 +178,86 @@
   "name": "Tax Amount vs Taxable Amount Mismatch", 
   "query": "select \n  item.parent, \n  item.item_code, \n  item.base_rate, \n  item.net_amount \nfrom \n  `tabSales Invoice Item` item,\n  `tabSales Invoice` inv \nwhere \n  inv.name=item.parent \n  and inv.docstatus=1 \n  and inv.posting_date&gt;='2018-02-01' \n  and inv.posting_date&lt;='2018-02-28' \n  and item.base_rate*item.qty=item.net_amount", 
   "query_name": "Tax Amount vs Taxable Amount Mismatch"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-12-19 14:13:04.591163", 
+  "name": "GST Detailed Report", 
+  "query": "select *, \n cast((net_amount*tax_rate/100) as decimal(17,2)) as total_tax,\n if(flag,cast((net_amount*tax_rate/100) as decimal(17,2)),0) as IGST,\n if(flag,0,cast(((net_amount*tax_rate/100)/2) as decimal(17,2))) as SGST from (\n  select \n  item.parent, \n  sales.reporting_name,\n  sales.posting_date,  \n  sales.customer_name,\n  (select \n    b_addr.gstin \n   from \n    `tabAddress` b_addr \n   where \n    b_addr.address_title=cust.name \n    and b_addr.name=sales.customer_address\n  ) as billing_gstin,\n  sales.special_invoice,\n  addr.gstin,\n  addr.city,\n  addr.state,\n  addr.gst_state_number,\n  item.item_code, \n  item.description, \n  item.item_group, \n  item.gst_hsn_code,\n  item.item_tax_rate, \n  left(right(item.item_tax_rate,5),4) as tax_rate_1,   \n  mid(item.item_tax_rate,locate(':',item.item_tax_rate,locate('IGST',item.item_tax_rate))+1,5) as tax_rate, \n  sum(item.qty) as qty, \n  cast(avg(item.net_rate) as decimal(17,2)) as net_rate,   \n  cast(sum(item.net_amount) as decimal(17,2)) as net_amount,\n  \n  ((gst_state_number&lt;&gt;0 and gst_state_number&lt;&gt;23) or \n  ((gstin is not null and gstin&lt;&gt;'' and left(gstin,2)&lt;&gt;23) or\n  (state is not null and state not regexp ('MADHYA PRADESH|M.P.|M.P|MP')) and\n  (state is not null and state&lt;&gt;''))) as flag\n\nfrom \n  `tabSales Invoice Item` item,\n  `tabSales Invoice` sales,\n  `tabAddress` addr,\n  `tabCustomer` cust\nwhere \n  sales.docstatus=1\n  and sales.name=item.parent\n  and addr.address_title=cust.name\n  and sales.shipping_address_name=addr.name\n  and sales.posting_date&gt;='2018-11-01'\n  and sales.posting_date&lt;='2018-11-30'\ngroup by\n  item.gst_hsn_code,\n  item.parent,\n  tax_rate\norder by\n  sales.name,\n  sales.posting_date) a", 
+  "query_name": "GST Detailed Report"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-07-18 14:04:03.731202", 
+  "name": "Posting Date Problem", 
+  "query": "select * from ((select distinct\n  'Payment Entry' as `Document Type`,\n  error_pe.letter_head,\n  main_pe.name, \n  main_pe.posting_date\nfrom \n  `tabPayment Entry` main_pe,\n  (select \n    letter_head,\n    max(pe.name) as name, \n    pe.posting_date \n  from   \n    `tabPayment Entry` pe \n  where   \n    pe.name &lt; (select \n        max(name) \n       from \n         `tabPayment Entry` \n       where \n          posting_date = (pe.posting_date - interval 1 day) \n        and letter_head = pe.letter_head\n        and posting_date &lt; '2018-08-01' \n        and posting_date &gt; '2018-03-31'\n        and docstatus=1) \n    and posting_date &lt; '2018-08-01' \n    and posting_date &gt; '2018-03-31'  \n    and docstatus=1 \n  group by \n    pe.posting_date \n  order by\n    pe.posting_date) error_pe\nwhere \n  main_pe.posting_date &gt;= (error_pe.posting_date - interval 1 day) \n  and main_pe.posting_date &lt;= (error_pe.posting_date + interval 1 day)\n  and main_pe.letter_head = error_pe.letter_head\norder by\n  error_pe.letter_head, \n  main_pe.name)\nunion all\n(select distinct\n  'Sales Invoice' as `Document Type`,\n  error_pe.letter_head,\n  main_pe.name, \n  main_pe.posting_date\nfrom \n  `tabSales Invoice` main_pe,\n  (select \n    letter_head,\n    max(pe.name) as name, \n    pe.posting_date \n  from   \n    `tabSales Invoice` pe \n  where   \n    pe.name &lt; (select \n        max(name) \n       from \n         `tabSales Invoice` \n       where \n          posting_date = (pe.posting_date - interval 1 day) \n        and letter_head = pe.letter_head\n        and posting_date &lt; '2018-08-01' \n        and posting_date &gt; '2018-03-31'\n        and docstatus=1) \n    and posting_date &lt; '2018-08-01' \n    and posting_date &gt; '2018-03-31'  \n    and docstatus=1 \n  group by \n    pe.posting_date \n  order by\n    pe.posting_date) error_pe\nwhere \n  main_pe.posting_date &gt;= (error_pe.posting_date - interval 1 day) \n  and main_pe.posting_date &lt;= (error_pe.posting_date + interval 1 day)\n  and main_pe.letter_head = error_pe.letter_head\norder by\n  error_pe.letter_head, \n  main_pe.name)) data", 
+  "query_name": "Posting Date Problem"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-05-07 13:17:34.554631", 
+  "name": "Current Salaries", 
+  "query": "select \n  e.branch,\n  se.employee_name, \n  se.parent,\n  se.base \nfrom \n  `tabSalary Structure Employee` se,\n  `tabEmployee` e\nwhere \n  se.from_date &lt;= '2018-04-01'\n  and (se.to_date is null or se.to_date &gt;= '2018-04-30')\n  and se.parent in (select name from `tabSalary Structure`\n        where is_active = 'Yes')\n  and e.name=se.employee\n  and e.status='Active'", 
+  "query_name": "Current Salaries"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-05-29 13:13:23.287089", 
+  "name": "Monthly Invoice Nos", 
+  "query": "select\n  concat(monthname(posting_date),' ',year(posting_date)) as `Month`,\n  letter_head as `Branch`,\n  min(name) as `Starting Invoice No`,\n  max(name) as `End Invoice No`\nfrom\n  `tabSales Invoice`\nwhere\n  posting_date &gt;= '2018-01-01'\n  and posting_date &lt;= '2018-03-31'\ngroup by\n  letter_head,\n  month(posting_date)\norder by\n  letter_head,\n  month(posting_date)", 
+  "query_name": "Monthly Invoice Nos"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-07-10 17:34:49.365002", 
+  "name": "Outstanding Details for Adjustments", 
+  "query": "select \n  *,\n  cast(`Total Debit`-`Total Credit` as Decimal(17,2)) as `Balance`,\n  cast((((`Total Debit`-`Total Credit`)/`Total Debit`)*100) as Decimal(8,2)) as `Percentage`,\n  cast((((`Total Debit`-`Total Credit`)/`Total Inv Value`)*100) as Decimal(8,2)) as `Inv Percentage`\nfrom\n  (select \n    dump.party,\n    customer.customer_name,\n    cast(sum(dump.debit) as Decimal(17,2)) as `Total Debit`,\n    cast(sum(dump.credit) as Decimal(17,2)) as `Total Credit`,\n    count(dump.hypothecation) as `Hypothecation`,\n    (select \n      cast(sum(grand_total) as Decimal(17,2))\n     from \n      `tabSales Invoice` \n     where \n      customer=party \n      and docstatus=1\n      and posting_date &gt;= '2018-04-01'\n      and posting_date &lt;= '2018-06-30'    \n    ) as `Total Inv Value`    \n  from\n  (select \n      gl_entry.voucher_type,\n      gl_entry.voucher_no,\n      gl_entry.posting_date,\n      gl_entry.debit,\n      gl_entry.credit,\n      gl_entry.party,\n      sales_invoice.hypothecation,\n      sales_invoice.reference\n    from   \n      `tabGL Entry` gl_entry\n      left join\n      `tabSales Invoice` sales_invoice\n      on\n      gl_entry.voucher_no = sales_invoice.name\n    where   \n      gl_entry.party_type = 'Customer'\n      and gl_entry.posting_date &gt;= '2018-04-01'\n      and gl_entry.posting_date &lt;= '2018-06-30'\n    order by \n      gl_entry.posting_date) as dump,\n    `tabCustomer` customer\n  where\n    customer.name = dump.party\n  group by \n    dump.party) as data", 
+  "query_name": "Outstanding Details for Adjustments"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-09-08 20:10:32.433962", 
+  "name": "Balances Queries", 
+  "query": "// Opening Balances - Tally Closing - Draft only\nselect \n u.`Root`,\n u.`Parent`,\n u.`Account`,\n u.`Party Name`,\n sum(u.`Debit`) as `Debit`,\n sum(u.`Credit`) as `Credit`\nfrom \n((select\n  acc.root_type as `Root`,\n  acc.parent_account as `Parent`,\n  jour_details.account as `Account`,\n  jour_details.party_name as `Party Name`,\n  sum(jour_details.debit) as `Debit`,\n  sum(jour_details.credit) as `Credit`\nfrom\n  `tabJournal Entry` jour,\n  `tabJournal Entry Account` jour_details,\n  `tabAccount` acc\nwhere\n  jour.docstatus = 0\n  and jour.posting_date &lt;= '2017-06-30'\n  and jour.name = jour_details.parent\n  and acc.name = jour_details.account\ngroup by\n  jour_details.party_name,\n  jour_details.account\norder by\n  acc.root_type,\n  acc.parent_account,\n  jour_details.account)\nunion all\n(select\n  acc.root_type as `Root`,\n  acc.parent_account as `Parent`,  \n  details.account as `Account`,\n  null as `Party Name`,\n  sum(details.debit_in_account_currency) as `Debit`,\n  sum(details.credit_in_account_currency) as `Credit`\n from\n  `tabGL Entry` details,\n  `tabStock Entry` entry,\n  `tabAccount` acc\n where\n  entry.name = details.voucher_no\n  and entry.posting_date &lt;= '2017-06-30'\n  and entry.purpose like '%Material Rec%'\n  and acc.name = details.account\n  and entry.docstatus = 1\n group by\n  details.account\n)) u \ngroup by \n   u.`Party Name`,\n   u.`Account` \norder by \n   u.`Root`, \n   u.`Parent`, \n   u.`Account`\n\n//Trial Balance\nselect \n u.`Root`,\n u.`Parent`,\n u.`Account`,\n u.`Party`,\n u.`Party Name`,\n cast((case when (u.`Opening Balance` &lt; 0) then\n         abs(u.`Opening Balance`)\n      else 0 end) as Decimal(17,2)) as `Opening Credit`,\n cast((case when (u.`Opening Balance` &gt; 0) then\n         abs(u.`Opening Balance`)\n      else 0 end) as Decimal(17,2)) as `Opening Debit`,  \n cast((case when (u.`Closing Balance` &lt; 0) then\n         abs(u.`Closing Balance`)\n      else 0 end) as Decimal(17,2)) as `Closing Credit`,  \n cast((case when (u.`Closing Balance` &gt; 0) then\n         abs(u.`Closing Balance`)\n      else 0 end) as Decimal(17,2)) as `Closing Debit`  ,\n  u.`Current Balance`\nfrom \n(select\n  acc.root_type as `Root`,\n  acc.parent_account as `Parent`,\n  acc.name as `Account`,\n  gl_entry.party as `Party`,\n  parties.`Party Name` as `Party Name`,\n  sum(if(posting_date&lt;'2017-07-01',debit-credit,0)) as `Opening Balance`,\n  sum(if(posting_date&lt;='2018-03-31',debit-credit,0)) as `Closing Balance`,\n  sum(if(posting_date&lt;=curdate(),debit-credit,0)) as `Current Balance`\nfrom\n  `tabAccount` acc,\n  (`tabGL Entry` gl_entry left join \n  ((select 'Customer' as party_type, name, customer_name as `Party Name` from `tabCustomer`)\n  union all\n  (select 'Supplier' as party_type, name, supplier_name as `Party Name` from `tabSupplier`)\n  union all\n  (select 'Employee' as party_type, name, employee_name as `Party Name` from `tabEmployee`)) as parties\n  on (parties.name = gl_entry.party and parties.party_type=gl_entry.party_type))\nwhere\n  acc.name = gl_entry.account\ngroup by\n  gl_entry.account,\n  `Party`\norder by\n  acc.root_type,\n  acc.parent_account,\n  acc.name,\n  `Party Name`) u\n\n  \n//Customer Current Balance\nselect\n  gl_entry.party as `Party`,\n  parties.`Party Name` as `Party Name`,\n  max(if(voucher_type = 'Sales Invoice',posting_date,NULL)) as `Latest Sales Invoice`,\n  cast(sum(if(posting_date&lt;'2017-07-01',debit-credit,0)) as Decimal(17,2)) as `Opening Balance`,\n  cast(sum(if((posting_date&gt;='2017-07-01' and posting_date&lt;='2018-03-31'),debit,0)) as Decimal(17,2)) as `Total Debit`,\n  cast(sum(if((posting_date&gt;='2017-07-01' and posting_date&lt;='2018-03-31'),credit,0)) as Decimal(17,2)) as `Total Credit`,\n  cast(sum(if(posting_date&lt;='2018-03-31',debit-credit,0)) as Decimal(17,2)) as `Closing Balance`,\n  cast(sum(if(posting_date&lt;=curdate(),debit-credit,0)) as Decimal(17,2)) as `Current Balance`\nfrom\n  (`tabGL Entry` gl_entry left join \n  ((select 'Customer' as party_type, name, customer_name as `Party Name` from `tabCustomer`)) as parties\n  on (parties.name = gl_entry.party and parties.party_type=gl_entry.party_type))\nwhere\n  gl_entry.party_type = 'Customer'\ngroup by\n  `Party`\norder by\n  `Party Name`\n\n\n  \n", 
+  "query_name": "Balances Queries"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-10-02 16:28:48.471859", 
+  "name": "Quantitative Details for Balance Sheet", 
+  "query": "select\n  item.brand,\n  item.item_group,\n  sum(if(stock.posting_date &lt;= '2017-06-30', actual_qty, 0)) as `Opening`,\n  sum(if(stock.posting_date &lt;= '2017-06-30', stock_value_difference, 0)) as `Opening Value`,  \n  abs(sum(if((stock.posting_date&gt;='2017-07-01' and stock.voucher_type = 'Purchase Invoice'), actual_qty, 0))) as `Purchase Qty`,\n  abs(sum(if((stock.posting_date&gt;='2017-07-01' and stock.voucher_type = 'Purchase Invoice'), stock_value_difference, 0))) as `Purchase Value`,\n  abs(sum(if((stock.posting_date&gt;='2017-07-01' and stock.voucher_type = 'Sales Invoice'), actual_qty, 0))) as `Sales Qty`,\n  abs(sum(if((stock.posting_date&gt;='2017-07-01' and stock.voucher_type = 'Sales Invoice'), stock_value_difference, 0))) as `Sales Value`,  \n  sum(actual_qty) as `Balance Qty`,\n  sum(stock_value_difference) as `Balance Value`\nfrom \n    (`tabStock Ledger Entry` stock left join `tabStock Entry` entry on (entry.name = stock.voucher_no)),\n    `tabItem` item\nwhere\n    (entry.purpose = 'Material Receipt' or entry.purpose is null)   \n    and stock.voucher_type != 'Delivery Note'\n    and stock.posting_date &gt;= '2017-04-01'\n    and stock.posting_date &lt;= '2018-03-31'\n    and stock.item_code = item.item_code\ngroup by\n  item.brand, item.item_group\norder by\n  item.brand, item.item_group", 
+  "query_name": "Quantitative Details for Balance Sheet"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2018-11-01 13:25:27.053960", 
+  "name": "Free Serial Nos", 
+  "query": "select serial.name, serial.item_code, serial.warehouse from `tabSerial No` serial, `tabPurchase Invoice` inv where inv.name = serial.purchase_document_no and inv.supplier_name like 'Samsung%' and inv.docstatus = 1 and serial.item_code like '%-J600%'", 
+  "query_name": "Free Serial Nos"
+ }, 
+ {
+  "description": null, 
+  "docstatus": 0, 
+  "doctype": "Custom SQL Queries", 
+  "modified": "2019-03-23 14:34:57.957901", 
+  "name": "GST Debit/Credit Notes", 
+  "query": "select \n  data.name as `Voucher No`,\n  data.posting_date as `Date`,\n  ifnull(max(data.party_name), max(if(data.account regexp ('SGST|CGST|Supplier'),null,data.account))) as `Party`,\n  sum(if(data.account not regexp ('SGST|CGST|Supplier'),debit,0)) as `Total Value`,\n  sum(if(data.account like 'SGST%',credit,0)) as `SGST`,\n  sum(if(data.account like 'CGST%',credit,0)) as `CGST`,  \n  sum(if(data.account like 'Suppl%',credit,0)) as `Taxable Value`,\n  data.remark as `Remarks`\nfrom\n  (\n   select \n     JE.posting_date,\n     JE.name,\n     JEA.account,\n     JEA.party_name,\n     JEA.debit,\n     JEA.credit,\n     JE.remark\n   from\n     `tabJournal Entry` JE,\n     `tabJournal Entry Account` JEA\n   where\n     JE.name = JEA.parent\n     and JE.docstatus = 1\n     and JE.name in (\n      select \n        J1.parent\n      from\n        `tabJournal Entry Account` J1\n        inner join\n        `tabJournal Entry Account` J2\n        on J1.parent = J2.parent\n      where\n        J1.account like 'SGST%'\n        and J2.account like 'Supplier%'\n      order by\n        J1.parent\n      )\n    ) data\ngroup by\n  data.name\norder by\n  data.posting_date", 
+  "query_name": "GST Debit/Credit Notes"
  }
 ]

@@ -204,9 +204,12 @@ def get_employee_details(filters):
 					  `tabSalary Structure Employee` struct
 					where
 					  struct.parent = slip.salary_structure
+					  and slip.docstatus = 1
 					  and struct.employee = slip.employee
 					  and slip.start_date = %s
-					  and slip.end_date = %s""",
+					  and slip.end_date = %s 
+					order by
+					  slip.branch, slip.employee_name""",
 					(filters.get("from_date"), filters.get("to_date")), as_dict=True)
 
 	for e in emp_details:

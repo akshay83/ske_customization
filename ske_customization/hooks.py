@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 app_name = "ske_customization"
 app_title = "Customizations for SKE"
 app_publisher = "Akshay Mehta"
-app_description = "Customizations Done Specifically for Mehta Automobiles Pvt Ltd"
+app_description = "Customizations Done Specifically for Surya Kiran Electronics"
 app_icon = "octicon octicon-file-directory"
 app_color = "#589494"
 app_email = "mehta.akshay@gmail.com"
@@ -55,6 +55,9 @@ doc_events = {
         },
 	"Salary Slip" : {
 		"before_save": "ske_customization.customizations_for_ske.salary_slip_hooks.salary_slip_before_save"
+	},
+	"Customer" : {
+		"before_insert": "ske_customization.customizations_for_ske.utils.validate_customer_before_save"
 	}
 }
 app_include_css = "/assets/ske_customization/css/custom_css.css"
