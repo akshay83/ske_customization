@@ -16,20 +16,21 @@ fixtures = ["Custom Field", "Property Setter", "Stock Settings", "Selling Settin
 
 doc_events = {
 	"*" : {
-		"autoname" : "ske_customization.customizations_for_ske.naming.set_auto_name"
+		"autoname" : "ske_customization.customizations_for_ske.naming.set_auto_name",
+		"validate" : "ske_customization.customizations_for_ske.naming.check_series"
 	},
 	"Item" : {
 		"validate" : "ske_customization.customizations_for_ske.item_hooks.item_validate"
 	},
 	"Sales Order": {
-		"validate" : "ske_customization.customizations_for_ske.finance_validation.sales_order_validate",
+		"validate" : "ske_customization.customizations_for_ske.sales_invoice_validation.sales_order_validate",
 		"before_cancel": "ske_customization.customizations_for_ske.pe_on_sales_order.before_cancel_sales_order",
 		"on_submit": "ske_customization.customizations_for_ske.pe_on_sales_order.make_payment_entry_with_sales_order",
 		"validate": "ske_customization.customizations_for_ske.pe_on_sales_order.validate"
 	},
 	"Payment Entry": {
-		"validate": "ske_customization.customizations_for_ske.finance_validation.payment_entry_validate",
-		"on_update_after_submit":"ske_customization.customizations_for_ske.payment_entry_hooks.payment_entry_on_update_after_submit"		
+		"validate": "ske_customization.customizations_for_ske.payment_entry_validation.payment_entry_validate",
+		"on_update_after_submit":"ske_customization.customizations_for_ske.payment_entry_hooks.payment_entry_on_update_after_submit"
 	},
 	"Purchase Receipt" : {
 		"on_submit" : "ske_customization.customizations_for_ske.utils.purchase_receipt_on_submit",
@@ -42,8 +43,8 @@ doc_events = {
 		"before_submit": "ske_customization.customizations_for_ske.utils.purchase_receipt_before_submit"
 	},
 	"Sales Invoice" : {
-		"validate" : "ske_customization.customizations_for_ske.finance_validation.sales_invoice_validate",
-		"before_submit" : "ske_customization.customizations_for_ske.finance_validation.sales_on_submit_validation",
+		"validate" : "ske_customization.customizations_for_ske.sales_invoice_validation.sales_invoice_validate",
+		"before_submit" : "ske_customization.customizations_for_ske.sales_invoice_validation.sales_on_submit_validation",
 		"before_save": "ske_customization.customizations_for_ske.workflow_hooks.before_save_salesinvoice",
 		"on_update_after_submit":"ske_customization.customizations_for_ske.sales_invoice_hooks.sales_invoice_on_update_after_submit"
 	},
@@ -51,15 +52,26 @@ doc_events = {
 		"on_update": "ske_customization.customizations_for_ske.workflow_hooks.on_update_selling_settings"
 	},
         "Stock Entry" : {
-                "validate": "ske_customization.customizations_for_ske.finance_validation.validate_stock_entry_serial_no"
+                "validate": "ske_customization.customizations_for_ske.sales_invoice_validation.validate_stock_entry_serial_no"
         },
 	"Salary Slip" : {
 		"before_save": "ske_customization.customizations_for_ske.salary_slip_hooks.salary_slip_before_save"
 	},
 	"Customer" : {
-		"before_insert": "ske_customization.customizations_for_ske.utils.validate_customer_before_save"
+		"before_insert": "ske_customization.customizations_for_ske.utils.validate_customer_before_save",
+		"validate": "ske_customization.customizations_for_ske.utils.validate_customer"
+	},
+	"Lead" : {
+		"after_insert": "ske_customization.customizations_for_ske.utils.on_save_lead",
+		"before_insert": "ske_customization.customizations_for_ske.utils.before_insert_lead"
+	},
+	"Address": {
+		"validate": "ske_customization.customizations_for_ske.quick_customer.validate_pin_with_state"
 	}
 }
+
+after_install = "ske_customization.customizations_for_ske.install.after_install"
+
 app_include_css = "/assets/ske_customization/css/custom_css.css"
 app_include_js = ["/assets/ske_customization/js/side_bar.js",
 				"/assets/ske_customization/js/form_comments.js",

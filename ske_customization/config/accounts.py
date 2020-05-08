@@ -43,6 +43,13 @@ def get_data():
 				},
 				{
 					"type":"report",
+					"doctype": "GL Entry",
+					"is_query_report":True,
+					"name":"Group Statement",
+					"description":"Generates a Group Statement for Multiple Customers"
+				},
+				{
+					"type":"report",
 					"doctype": "Payment Entry",
 					"is_query_report":True,
 					"name":"Daily Collection Report",
@@ -54,6 +61,13 @@ def get_data():
 					"is_query_report": True,
 					"name": "Cash Book",
 					"description": "Display Daily Cash Register"
+				},
+				{
+					"type": "report",
+					"doctype": "Sales Invoice",
+					"is_query_report": True,
+					"name": "Parking Payment Report",
+					"description": "Parking Payment Report"
 				}
 
 			]
